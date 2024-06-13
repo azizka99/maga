@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model about {
+  id                Int       @id @default(autoincrement())
+  title             String?   @db.VarChar(255)
+  description       String?   @db.LongText
+  image_src         String?   @db.VarChar(255)
+  image_title       String?   @db.VarChar(255)
+  image_description String?   @db.LongText
+  languageId        Int?
+  language          language? @relation(fields: [languageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_about_language")
+
+  @@index([languageId], map: "fk_about_language")
+}
+
+model category {
+  id         Int       @id @default(autoincrement())
+  name       String?   @db.VarChar(255)
+  languageId Int?
+  language   language? @relation(fields: [languageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_category_language")
+  product    product[]
+
+  @@index([languageId], map: "fk_category_language")
+}
+
+model contacts {
+  id               Int       @id @default(autoincrement())
+  address          String?   @db.VarChar(255)
+  telephone_number String?   @db.VarChar(255)
+  email            String?   @db.VarChar(255)
+  languageId       Int?
+  language         language? @relation(fields: [languageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contacts_language")
+
+  @@index([languageId], map: "fk_contacts_language")
+}
+
+model header {
+  id          Int       @id @default(autoincrement())
+  image_src   String?   @db.VarChar(255)
+  title       String?   @db.VarChar(255)
+  description String?   @db.LongText
+  languageId  Int?
+  language    language? @relation(fields: [languageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_header_language")
+
+  @@index([languageId], map: "fk_header_language")
+}
+
+model language {
+  id       Int        @id @default(autoincrement())
+  name     String     @db.VarChar(255)
+  about    about[]
+  category category[]
+  contacts contacts[]
+  header   header[]
+  product  product[]
+  service  service[]
+}
+
+model product {
+  id            Int             @id @default(autoincrement())
+  info          String?         @db.VarChar(255)
+  description   String?         @db.LongText
+  created_at    DateTime?       @default(now()) @db.DateTime(0)
+  categoryId    Int?
+  languageId    Int?
+  name          String?         @db.VarChar(255)
+  language      language?       @relation(fields: [languageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_product_language")
+  category      category?       @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "product_ibfk_1")
+  product_image product_image[]
+
+  @@index([categoryId], map: "categoryId")
+  @@index([languageId], map: "fk_product_language")
+}
+
+model product_image {
+  id        Int      @id @default(autoincrement())
+  img_src   String?  @db.VarChar(255)
+  isMain    Boolean? @default(false)
+  productId Int?
+  product   product? @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "product_image_ibfk_1")
+
+  @@index([productId], map: "productId")
+}
+
+model service {
+  id          Int       @id @default(autoincrement())
+  name        String?   @db.VarChar(255)
+  image_src   String?   @db.VarChar(255)
+  description String?   @db.LongText
+  languageId  Int?
+  language    language? @relation(fields: [languageId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_service_language")
+
+  @@index([languageId], map: "fk_service_language")
+}
