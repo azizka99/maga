@@ -6,6 +6,8 @@ const path = require("path");
 const {PrismaClient} = require('@prisma/client');
 const Header = require('./classes/headersClient');
 const prisma = new PrismaClient();
+const admin = require('./admin');
+const {md5} = require('js-md5');
 
 
 dotenv.config();
@@ -19,6 +21,30 @@ app.use(express.json());
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
+
+app.use('/admin', async (req, res, next)=>{
+    const checkAuth = async ()=>{
+        const user = await prisma.user.findFirst({});
+
+        const auth = req.headers['authorization'];
+
+        if(user.md5 === auth){
+            return true;
+        }else{
+           return false;
+        }
+    }
+    if(await checkAuth()){
+        next();
+    }else{
+        res.json({
+            result:null,
+            error: "auth error"
+        })
+    }
+
+    await checkAuth();
+}, admin)
 
 app.use((req, res, next) => {
     const parts = req.url.split('/');
@@ -38,37 +64,45 @@ app.use(
 );
 
 
-app.get('/test', async (req, res) => {
+// app.get('/test', async (req, res) => {
+//
+//     //createdAr yazmamisham
+//    try{
+//        // const result = await prisma.product.create({
+//        //     data:{
+//        //         info: "test_Info",
+//        //         description: "test_Description",
+//        //         categoryId: 1,
+//        //         languageId: 1,
+//        //         name: "test_Product"
+//        //     }
+//        // });
+//
+//        const result = await  prisma.product_image.create({
+//            data:{
+//                img_src: "about1.avif",
+//                isMain: true,
+//                productId: 1
+//            }
+//        })
+//        console.log(result);
+//    }catch (e) {
+//        console.error(e);
+//    }
+//
+//     res.json({
+//         res: 'en'
+//     });
+// });
 
-    //createdAr yazmamisham
-   try{
-       // const result = await prisma.product.create({
-       //     data:{
-       //         info: "test_Info",
-       //         description: "test_Description",
-       //         categoryId: 1,
-       //         languageId: 1,
-       //         name: "test_Product"
-       //     }
-       // });
 
-       const result = await  prisma.product_image.create({
-           data:{
-               img_src: "about1.avif",
-               isMain: true,
-               productId: 1
-           }
-       })
-       console.log(result);
-   }catch (e) {
-       console.error(e);
-   }
+app.get('/test', async (req, res)=>{
+    console.log(req.headers);
 
-    res.json({
-        res: 'en'
-    });
+    res.set('test', 'something');
+
+    res.json({xuy:'xuy'});
 });
-
 
 app.get('/:lang/headers', async (req, res)=>{
     const headers = await prisma.header.findMany({
@@ -158,6 +192,46 @@ app.get('/:lang/products', async (req, res)=>{
         result: products,
         error: null
     })
+});
+
+app.post('/login', async (req, res)=>{
+   const {username, password} = req.body;
+
+    try{
+        const user = await prisma.user.findFirst({
+            where:{
+                username,
+                password
+            }
+        });
+        if(!user){
+            res.json({
+                result: null,
+                error: 'login or password is wrong!'
+            })
+        }
+
+        console.log(username, typeof username)
+        const md5Code = await prisma.user.update({
+            where:{
+                id: user.id
+            },
+            data:{
+                md5: md5(username)
+            }
+        });
+        res.json({
+            result: {
+                authorization: md5Code.md5
+            },
+            error: null
+        })
+    }catch (e) {
+        res.json({
+            result:null,
+            error: `Something Went wrong ${e}`
+        })
+    }
 });
 
 

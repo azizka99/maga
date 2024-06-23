@@ -99,3 +99,10 @@ model service {
 
   @@index([languageId], map: "fk_service_language")
 }
+
+model user {
+  id       Int     @id @default(autoincrement())
+  username String? @db.VarChar(255)
+  password String? @db.VarChar(255)
+  md5      String? @db.LongText
+}
